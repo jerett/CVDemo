@@ -1,4 +1,5 @@
-#OpenCV Demo
+# OpenCV Demo
+A list of OpenCV demos
 
 
 ## Stitch
