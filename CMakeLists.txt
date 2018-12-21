@@ -3,4 +3,5 @@ project(OpenCVDemo)
 
 set(CMAKE_CXX_STANDARD 11)
 add_subdirectory(Stitch)
-add_subdirectory(SiftGPUStitch)
+# uncomment if you have GLFW, DevIL, GLUT
+#add_subdirectory(SiftGPUStitch)

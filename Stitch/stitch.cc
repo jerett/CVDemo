@@ -57,10 +57,10 @@ Size GetWarpSize(std::vector<InputImage> &imgs, const std::vector<Mat> &H_array)
             const cv::Mat &H = H_array[i];
 
             double corners_data[4][3] = {
-                    {0,              0,              1},
-                    {0,              src.image.rows, 1},
-                    {src.image.cols, 0,              1},
-                    {src.image.cols, src.image.rows, 1},
+                    {0,                                    0,                                    1},
+                    {0,                                    static_cast<double >(src.image.rows), 1},
+                    {static_cast<double >(src.image.cols), 0,                                    1},
+                    {static_cast<double >(src.image.cols), static_cast<double >(src.image.rows), 1},
             };
             Mat corners = Mat(4, 3, CV_64FC1, corners_data).t();
             Mat warp_corners = H * corners;
@@ -123,8 +123,8 @@ int main(int argc, char *argv[]) {
 //    CV_Assert(imgs[1].Load("yosemite2.jpg"));
 //    CV_Assert(imgs[2].Load("yosemite3.jpg"));
 
-    for (int i = 0; i< argc-1; ++i) {
-        imgs[i].Load(argv[i+1]);
+    for (int i = 0; i < argc - 1; ++i) {
+        imgs[i].Load(argv[i + 1]);
     }
 
     // H array corresponding to each img, img[0] is ID matrix.
