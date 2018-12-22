@@ -5,3 +5,5 @@ set(CMAKE_CXX_STANDARD 11)
 add_subdirectory(Stitch)
 # uncomment if you have GLFW, DevIL, GLUT
 #add_subdirectory(SiftGPUStitch)
+
+add_subdirectory(Track)

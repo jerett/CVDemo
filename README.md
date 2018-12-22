@@ -4,6 +4,7 @@ A list of OpenCV demos
 ## Libraries
 
 * OpenCV3.4.0 and contrib
+* Boost(1.68).filesystem
 
 ## Stitch
  A demo demonstrates how to use feature detector, find transform matrix , warp img, and stitch together.
