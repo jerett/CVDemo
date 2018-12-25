@@ -22,11 +22,11 @@ A list of OpenCV demos
  ## Tracker 
  
 This demo demostrates how to track object. We assemble opencv trackers and Staple tracker.
- ![track result](doc/track.gif)
 usage: ./track algorithm_str[input_video|input_img_dir] output_dir
 
-Supported algorithm list as below.
+ ![track result](doc/track.gif)
 
+Supported algorithm list as below:
 * Boosting, OpenCV
 * KCF, OpenCV
 * MIL, OpenCV
