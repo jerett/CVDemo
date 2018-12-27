@@ -40,5 +40,7 @@ Supported algorithm list as below:
 
 Use OpenCV DNN module to do yolov3 object detect.
 
+![detection result](doc/result.jpg)
+
 Please download yolov3 cfg file, class name and weight file for cnn forward.Type `./detection help` for more infomation.
 
