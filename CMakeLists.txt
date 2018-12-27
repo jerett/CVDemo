@@ -7,3 +7,5 @@ add_subdirectory(Stitch)
 #add_subdirectory(SiftGPUStitch)
 
 add_subdirectory(Track)
+add_subdirectory(Detection)
+add_subdirectory(OpenCVDraw)

@@ -122,6 +122,7 @@ int track(const std::string &src,
 }
 
 int main(int argc, char *argv[]) {
+    cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_DEBUG);
     const String keys =
         "{help h usage ? |      | print this message   }"
         "{type t         |Staple| track algorithm type }"

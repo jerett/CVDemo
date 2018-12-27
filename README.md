@@ -3,7 +3,7 @@ A list of OpenCV demos
 
 ## Libraries
 
-* OpenCV3.4.0 and contrib
+* OpenCV3.4.5 and contrib
 * Boost(1.68).filesystem
 
 ## Stitch
@@ -21,8 +21,7 @@ A list of OpenCV demos
  
  ## Tracker 
  
-This demo demostrates how to track object. We assemble opencv trackers and Staple tracker.
-usage: ./track algorithm_str[input_video|input_img_dir] output_dir
+This demo demostrates how to track object. We assemble opencv trackers and Staple tracker. Type `./track help` for more information.
 
  ![track result](doc/track.gif)
 
@@ -35,3 +34,11 @@ Supported algorithm list as below:
 * GOTURN, OpenCV
 * MOSSE, OpenCV
 * Staple, copy src from [github](https://github.com/xuduo35/STAPLE), written by xuduo35.
+
+
+## Detection
+
+Use OpenCV DNN module to do yolov3 object detect.
+
+Please download yolov3 cfg file, class name and weight file for cnn forward.Type `./detection help` for more infomation.
+
