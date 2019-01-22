@@ -40,6 +40,7 @@ struct staple_cfg
     double scale_model_factor = 1.0;
     double scale_step = 1.02;
     double scale_model_max_area = 32*16;
+    double psr_threshold = 4.0;
 
     // debugging stuff
     int visualization = 0;              // show output bbox on frame
@@ -55,10 +56,15 @@ public:
     STAPLE_TRACKER(){ cfg = default_parameters_staple(cfg); frameno = 0; };
     ~STAPLE_TRACKER(){}
 
+    void init(const cv::Mat &img, const cv::Rect2d& box);
+    bool update(const cv::Mat &img, cv::Rect2d& out_box);
+
+private:
     void mexResize(const cv::Mat &im, cv::Mat &output, cv::Size newsz, const char *method);
     void tracker_staple_train(const cv::Mat &im, bool first);
     void tracker_staple_initialize(const cv::Mat &im, cv::Rect_<float> region);
-    cv::Rect tracker_staple_update(const cv::Mat &im);
+    // cv::Rect tracker_staple_update(const cv::Mat &im);
+    bool tracker_staple_update(const cv::Mat &im, cv::Rect2d &out_box);
 
 protected:
     staple_cfg default_parameters_staple(staple_cfg cfg);

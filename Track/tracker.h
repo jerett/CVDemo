@@ -10,7 +10,7 @@
 #pragma once
 
 #include <opencv2/tracking.hpp>
-#include "staple/staple_tracker.hpp"
+#include "staple/staple_tracker.h"
 
 
 namespace cd {

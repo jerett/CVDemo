@@ -12,7 +12,8 @@
  */
 
 #include "fhog.h"
-#include "staple_tracker.hpp"
+#include "staple_tracker.h"
+#include "psr.h"
 #include <iomanip>
 
 // mexResize got different results using different OpenCV, it's not trustable
@@ -160,12 +161,12 @@ void STAPLE_TRACKER::getSubwindow(const cv::Mat &im, cv::Point_<float> centerCoo
     cv::Rect roiRect(lefttopLimit, rightbottomLimit);
 
     im(roiRect).copyTo(subWindow);
-	
+
     int top = lefttopLimit.y - lefttop.y;
     int bottom = rightbottom.y - rightbottomLimit.y + 1;
     int left = lefttopLimit.x - lefttop.x;
     int right = rightbottom.x - rightbottomLimit.x + 1;
-	
+
     cv::copyMakeBorder(subWindow, subWindow, top, bottom, left, right, cv::BORDER_REPLICATE);
 
     // imresize(subWindow, output, model_sz, 'bilinear', 'AntiAliasing', false)
@@ -386,8 +387,20 @@ void STAPLE_TRACKER::gaussianResponse(cv::Size rect_size, double sigma, cv::Mat 
         }
 
     output = cv::Mat(rect_size.height, rect_size.width, CV_32FC2, OUTPUT).clone();
-
     delete[] OUTPUT;
+}
+
+void STAPLE_TRACKER::init(const cv::Mat &img, const cv::Rect2d &box) {
+    tracker_staple_initialize(img, box);
+    tracker_staple_train(img, true);
+}
+
+bool STAPLE_TRACKER::update(const cv::Mat &im, cv::Rect2d &out_box) {
+    bool ret = tracker_staple_update(im, out_box);
+    if (ret) {
+        tracker_staple_train(im, false);
+    }
+    return ret;
 }
 
 void STAPLE_TRACKER::tracker_staple_initialize(const cv::Mat &im, cv::Rect_<float> region)
@@ -433,6 +446,7 @@ void STAPLE_TRACKER::tracker_staple_initialize(const cv::Mat &im, cv::Rect_<floa
     // bandwidth proportional to target size
     double output_sigma
         = sqrt(norm_target_sz.width * norm_target_sz.height) * cfg.output_sigma_factor / cfg.hog_cell_size;
+    std::cout << "sigma:" << output_sigma << std::endl;
 
     cv::Mat y;
     gaussianResponse(cf_response_size, output_sigma, y);
@@ -1063,8 +1077,34 @@ void STAPLE_TRACKER::mergeResponses(const cv::Mat &response_cf, const cv::Mat &r
     // response = (1 - alpha) * response_cf + alpha * response_pwp;
 }
 
+
+std::string type2str(int type) {
+    std::string r;
+
+    uchar depth = type & CV_MAT_DEPTH_MASK;
+    uchar chans = 1 + (type >> CV_CN_SHIFT);
+
+    switch ( depth ) {
+        case CV_8U:  r = "8U"; break;
+        case CV_8S:  r = "8S"; break;
+        case CV_16U: r = "16U"; break;
+        case CV_16S: r = "16S"; break;
+        case CV_32S: r = "32S"; break;
+        case CV_32F: r = "32F"; break;
+        case CV_64F: r = "64F"; break;
+        default:     r = "User"; break;
+    }
+
+    r += "C";
+    r += (chans+'0');
+
+    return r;
+}
+
+
 // TESTING step
-cv::Rect STAPLE_TRACKER::tracker_staple_update(const cv::Mat &im)
+// cv::Rect STAPLE_TRACKER::tracker_staple_update(const cv::Mat &im)
+bool STAPLE_TRACKER::tracker_staple_update(const cv::Mat &im, cv::Rect2d &out_box)
 {
     // extract patch of size bg_area and resize to norm_bg_area
     cv::Mat im_patch_cf;
@@ -1218,14 +1258,26 @@ cv::Rect STAPLE_TRACKER::tracker_staple_update(const cv::Mat &im)
     // ESTIMATION
     cv::Mat response;
     mergeResponses(response_cf, response_pwp, response);
+    {
+        // std::cout << "response:" << response.size() << " type:" << type2str(response.type()) << std::endl;
+        cv::Point minLoc, maxLoc;
+        double minVal, maxVal;
+        cv::minMaxLoc(response, &minVal, &maxVal, &minLoc, &maxLoc);
+        float peakValue = 0;
+        float psr = calcPsr<float>(response, maxLoc, 0, peakValue);
+        // std::cout << "max val:" << maxVal << std::endl;
+        psr *= 2;
+        std::cout << "peakValue:" << peakValue << " psr:" << psr << std::endl;
+        if (psr < cfg.psr_threshold) {
+            return false;
+            // return true;
+        }
+    }
+
 
     double minVal, maxVal;
     cv::Point minLoc, maxLoc;
-
     cv::minMaxLoc(response, &minVal, &maxVal, &minLoc, &maxLoc);
-    //[row, col] = find(response == max(response(:)), 1);
-
-    //std::cout << maxLoc.x << " " << maxLoc.y << std::endl;
 
     float centerx = (1 + norm_delta_area.width) / 2 - 1;
     float centery = (1 + norm_delta_area.height) / 2 - 1;
@@ -1234,12 +1286,16 @@ cv::Rect STAPLE_TRACKER::tracker_staple_update(const cv::Mat &im)
     pos.y += (maxLoc.y - centery) / area_resize_factor;
 
     // Report current location
-    cv::Rect_<float> location;
+    // cv::Rect_<float> location;
+    // location.x = pos.x - target_sz.width/2.0;
+    // location.y = pos.y - target_sz.height/2.0;
+    // location.width = target_sz.width;
+    // location.height = target_sz.height;
+    out_box.x = pos.x - target_sz.width/2.0;
+    out_box.y = pos.y - target_sz.height/2.0;
+    out_box.width = target_sz.width;
+    out_box.height = target_sz.height;
 
-    location.x = pos.x - target_sz.width/2.0;
-    location.y = pos.y - target_sz.height/2.0;
-    location.width = target_sz.width;
-    location.height = target_sz.height;
 
     //std::cout << location << std::endl;
 
@@ -1327,5 +1383,6 @@ cv::Rect STAPLE_TRACKER::tracker_staple_update(const cv::Mat &im)
         area_resize_factor = sqrt(cfg.fixed_area / (float)(bg_area.width * bg_area.height));
     }
 
-    return location;
+    // return location;
+    return true;
 }

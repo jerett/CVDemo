@@ -68,15 +68,14 @@ TrackerStaple::TrackerStaple() {
 }
 
 bool TrackerStaple::Init(cv::Mat &frame, const cv::Rect2d &box) {
-    tracker_.tracker_staple_initialize(frame, box);
-    tracker_.tracker_staple_train(frame, true);
+    tracker_.init(frame, box);
     return true;
 }
 
 bool TrackerStaple::Update(cv::Mat &frame, cv::Rect2d &out_box) {
-    out_box = tracker_.tracker_staple_update(frame);
-    tracker_.tracker_staple_train(frame, false);
-    return true;
+    // out_box = tracker_.tracker_staple_update(frame);
+    // tracker_.tracker_staple_train(frame, false);
+    return tracker_.update(frame, out_box);
 }
 
 

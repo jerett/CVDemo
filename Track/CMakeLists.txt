@@ -3,8 +3,10 @@ FIND_PACKAGE(OpenCV REQUIRED)
 find_package(Boost COMPONENTS system filesystem REQUIRED)
 
 
-set(STAPLE_SRC staple/fhog.cpp staple/fhog.h
-        staple/staple_tracker.cpp staple/staple_tracker.hpp
+set(STAPLE_SRC
+        staple/psr.h
+        staple/fhog.cpp staple/fhog.h
+        staple/staple_tracker.cpp staple/staple_tracker.h
         staple/sse.hpp track_input.cc track_input.h)
 add_executable(track main.cc ${STAPLE_SRC} tracker.cc tracker.h)
 
