@@ -6,6 +6,9 @@
 #include "yolov3_detector.h"
 #include <opencv2/core/utils/logger.hpp>
 #include <fstream>
+#include <algorithm>
+#include <functional>
+#include <numeric>
 
 using namespace cv;
 
@@ -25,6 +28,7 @@ YOLOV3Detector::YOLOV3Detector(const std::string &class_txt,
     is_open_ = true;
 }
 
+
 void YOLOV3Detector::LoadClasses(const std::string &class_txt) {
     std::ifstream ifs(class_txt.c_str());
     std::string line;
@@ -34,6 +38,7 @@ void YOLOV3Detector::LoadClasses(const std::string &class_txt) {
 }
 
 std::vector<ObjectDetection> YOLOV3Detector::Detect(const Mat &img, bool nms) {
+    auto t1 = cv::getTickCount();
     const double scale = 1.0 / 255;
     Scalar mean_value(0, 0, 0);
     cv::Mat blob = dnn::blobFromImage(img, scale, input_size_, mean_value, true, false, CV_32F);
@@ -41,9 +46,11 @@ std::vector<ObjectDetection> YOLOV3Detector::Detect(const Mat &img, bool nms) {
     net_.setInput(blob);
     std::vector<Mat> outs;
     net_.forward(outs, net_.getUnconnectedOutLayersNames());
+    auto t2 = cv::getTickCount();
+    CV_LOG_INFO(NULL, "cnt:" << (t2 - t1) / cv::getTickFrequency());
 
     static std::vector<int> outLayers = net_.getUnconnectedOutLayers();
-
+    std::vector<ObjectDetection> detections;
 
     std::vector<int> ids;
     std::vector<Rect> boxes;
@@ -73,7 +80,6 @@ std::vector<ObjectDetection> YOLOV3Detector::Detect(const Mat &img, bool nms) {
         }
     }
 
-    std::vector<ObjectDetection> detections;
     std::vector<int> indices;
     if (nms) {
         dnn::NMSBoxes(boxes, confidences, conf_threshold_, nms_threshold_, indices);

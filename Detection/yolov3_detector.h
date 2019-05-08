@@ -10,14 +10,9 @@
 
 #include <string>
 #include <opencv2/dnn.hpp>
+#include "object_detection.h"
 
 namespace cd {
-
-struct ObjectDetection {
-    std::string name;
-    float confidence;
-    cv::Rect box;
-};
 
 class YOLOV3Detector {
 
@@ -25,9 +20,9 @@ public:
     YOLOV3Detector(const std::string &class_txt,
                    const std::string &cfg_file,
                    const std::string &weights_file,
-                   cv::Size intput_size = cv::Size(608, 608),
+                   cv::Size intput_size = cv::Size(544, 544),
                    float conf_threshold = 0.5,
-                   float nms_threshold = 0.4);
+                   float nms_threshold = 0.45);
 
     bool IsOpen() const {
         return is_open_;

@@ -7,7 +7,6 @@
  * Test OpenCV DNN module, yolov3 detection.
  */
 
-
 #include <fstream>
 #include <vector>
 #include <string>
@@ -44,21 +43,6 @@ void DrawDetections(const std::vector<ObjectDetection> &detections, cv::Mat &img
     }
 }
 
-void ShowResult(cv::Mat &origin_img, cv::Mat &raw_detection_img, cv::Mat &nms_detection_img) {
-    cv::putText(origin_img, "origin", Point(0, 30), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 255, 0), 2);
-    cv::putText(raw_detection_img, "raw detection", Point(0, 30), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 255, 0), 2);
-    cv::putText(nms_detection_img, "nms detection", Point(0, 30), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 255, 0), 2);
-    cv::Mat mat_arr[] = {
-        origin_img, raw_detection_img, nms_detection_img,
-    };
-    Mat display_img;
-    hconcat(mat_arr, 3, display_img);
-    // imshow("origin", img);
-    // imshow("nms detection", nms_img);
-    // imshow("no nms detection", no_nms_img);
-    imshow("detection", display_img);
-    waitKey(0);
-}
 
 int main(int argc, char *argv[]) {
     const String keys =
@@ -82,30 +66,25 @@ int main(int argc, char *argv[]) {
     }
 
     cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_DEBUG);
-
-    // cd::YOLOV3Detector detector("coco.names", "yolov3.cfg", "yolov3.weights");
     cd::YOLOV3Detector detector(classes_txt, cfg_file, model_file);
+
     if (!detector.IsOpen()) {
         CV_LOG_ERROR(NULL, "open detector failed.");
         return -1;
     }
 
-    auto img = imread(img_path);
-    if (img.empty()) {
+    auto src = imread(img_path);
+    if (src.empty()) {
         CV_LOG_ERROR(NULL, "read img error:" << img_path);
         return -1;
     }
 
-    Mat nms_img = img.clone();
-    const auto nms_detections = detector.Detect(img, true);
-    DrawDetections(nms_detections, nms_img);
+    // Mat nms_img = dst.clone();
+    auto detections = detector.Detect(src, true);
+    DrawDetections(detections, src);
+    cv::imshow("fuck", src);
+    cv::waitKey(0);
 
-    Mat no_nms_img = img.clone();
-    const auto no_nms_detections = detector.Detect(img, false);
-    DrawDetections(no_nms_detections, no_nms_img);
-
-    ShowResult(img, no_nms_img, nms_img);
-    cv::imwrite("result.jpg", nms_img);
     return 0;
 }
 
