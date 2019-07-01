@@ -48,3 +48,9 @@ Please download yolov3 cfg file, class name and weight file for cnn forward.Type
 
 Use OpenCV HOGDescriptor and visualize.
 
+
+## filter
+
+test OpenCV gaussian filter and bilateral filter.
+![gaussian](doc/gaussian.png)
+![bilateral](doc/bilateral.png)
