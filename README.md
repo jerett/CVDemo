@@ -48,5 +48,3 @@ Please download yolov3 cfg file, class name and weight file for cnn forward.Type
 
 Use OpenCV HOGDescriptor and visualize.
 
-![detection result](doc/result.jpg)
-
