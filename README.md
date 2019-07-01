@@ -44,3 +44,9 @@ Use OpenCV DNN module to do yolov3 object detect.
 
 Please download yolov3 cfg file, class name and weight file for cnn forward.Type `./detection help` for more infomation.
 
+## hog
+
+Use OpenCV HOGDescriptor and visualize.
+
+![detection result](doc/result.jpg)
+
