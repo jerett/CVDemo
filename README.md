@@ -52,5 +52,6 @@ Use OpenCV HOGDescriptor and visualize.
 ## filter
 
 test OpenCV gaussian filter and bilateral filter.
+
 ![gaussian](doc/gaussian.png)
 ![bilateral](doc/bilateral.png)
