@@ -2,6 +2,7 @@
 // Created by jerett on 18-6-6.
 //
 
+#include <vector>
 #include <opencv2/opencv.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/core/utils/logger.hpp>
@@ -9,6 +10,11 @@
 #include <opencv2/features2d.hpp>
 
 using namespace cv;
+using namespace std;
+
+bool visual_dbg = false;
+std::string blend_method = "mbb";
+std::vector<std::string> image_names;
 
 struct InputImage {
 public:
@@ -28,6 +34,38 @@ public:
     Mat descriptors;
     std::string path;
 };
+
+static void printUsage() {
+    cout <<
+         "Rotation model images stitcher.\n\n"
+         "Stitch img1 img2 [...imgN] [flags]\n\n"
+         "Flags:\n"
+         "  --blender(no|mbb)\n"
+         "      Set blender method, The default value is 'mbb'.\n"
+         "  --visual_dbg\n"
+         "      Visualize debug.\n";
+}
+
+static int parseCmdArgs(int argc, char** argv) {
+    if (argc == 1) {
+        printUsage();
+        return -1;
+    }
+    for (int i = 1; i < argc; ++i) {
+        if (string(argv[i]) == "--help" || string(argv[i]) == "/?") {
+            printUsage();
+            return -1;
+        } else if (string(argv[i]) == "--visual_dbg") {
+            visual_dbg = true;
+        } else if (string(argv[i]) == "--blender") {
+            i++;
+            blend_method = string(argv[i]);
+        } else {
+            image_names.push_back(string(argv[i]));
+        }
+    }
+    return 0;
+}
 
 void GetMatch(InputImage &src1, InputImage &src2, std::vector<DMatch> &good_matches) {
 //    auto featureDetector = xfeatures2d::SURF::create();
@@ -84,19 +122,13 @@ Size GetWarpSize(std::vector<InputImage> &imgs, const std::vector<Mat> &H_array)
 //    cv::reduce(warp_corners, corner_min, 1, CV_REDUCE_MIN);
 //    CV_LOG_INFO(NULL, "corner min:\n" << corner_min);
     cv::Mat corner_max;
-    cv::reduce(all_corners, corner_max, 1, CV_REDUCE_MAX);
+    cv::reduce(all_corners, corner_max, 1, cv::REDUCE_MAX);
     CV_LOG_INFO(NULL, "corner max:\n" << corner_max);
     return Size(corner_max.at<double>(0, 0), corner_max.at<double>(1, 0));
 }
 
-cv::Mat Warp(const InputImage &src, const Mat &H, const Size warp_size) {
-    cv::Mat warp;
-    warpPerspective(src.image, warp, H, warp_size);
-    return warp;
-}
-
 cv::Mat GetH(const std::vector<Point2f> &src1_keypoints, const std::vector<Point2f> &src2_keypoints) {
-    Mat H = findHomography(src2_keypoints, src1_keypoints, CV_RANSAC);
+    Mat H = findHomography(src2_keypoints, src1_keypoints, cv::RANSAC);
     CV_LOG_INFO(NULL, "estimate H:\n" << H << "\n size:" << H.size);
     return H;
 }
@@ -111,20 +143,44 @@ cv::Mat GetH2(const std::vector<Point2f> &src1_keypoints, const std::vector<Poin
     return H;
 }
 
-int main(int argc, char *argv[]) {
-    std::vector<InputImage> imgs(argc - 1);
-//    InputImage src1;
-//    InputImage src2;
-//    CV_Assert(imgs[0].Load("uttower1.jpg"));
-//    CV_Assert(imgs[1].Load("uttower2.jpg"));
-//    CV_Assert(src1.Load("Image1.jpg"));
-//    CV_Assert(src2.Load("Image2.jpg"));
-//    CV_Assert(imgs[0].Load("yosemite1.jpg"));
-//    CV_Assert(imgs[1].Load("yosemite2.jpg"));
-//    CV_Assert(imgs[2].Load("yosemite3.jpg"));
+cv::Mat StitchWithNoBlend(const std::vector<Mat> &warp_imgs, const std::vector<Mat> &warp_masks) {
+    // add warp img
+    cv::Mat stitch(warp_imgs[0].size(), CV_32FC(warp_imgs[0].channels()));
+    cv::Mat stitch_mask(warp_masks[0].size(), CV_8U);
+    stitch_mask.setTo(0);
+    for (int i = 0; i < warp_imgs.size(); ++i) {
 
-    for (int i = 0; i < argc - 1; ++i) {
-        imgs[i].Load(argv[i + 1]);
+        cv::Mat warp_img_f;
+        warp_imgs[i].convertTo(warp_img_f, stitch.type());
+        add(warp_img_f, stitch, stitch, warp_masks[i]);
+    }
+    stitch.convertTo(stitch, CV_8UC3);
+    return stitch;
+}
+
+cv::Mat StitchWithMbbBlend(const std::vector<Mat> &warp_imgs, const std::vector<Mat> &warp_masks) {
+    cv::Rect roi_dst(0, 0, warp_imgs[0].cols, warp_imgs[0].rows);
+    cv::detail::MultiBandBlender blender(false);
+    blender.prepare(roi_dst);
+
+    for (int i = 0; i < warp_imgs.size(); ++i) {
+        blender.feed(warp_imgs[i], warp_masks[i], cv::Point(0, 0));
+    }
+    cv::Mat stitch;
+    cv::Mat stitch_mask;
+    blender.blend(stitch, stitch_mask);
+    stitch.convertTo(stitch, CV_8U);
+    return stitch;
+}
+
+
+int main(int argc, char *argv[]) {
+    int retval = parseCmdArgs(argc, argv);
+    if (retval != 0) return retval;
+
+    std::vector<InputImage> imgs(image_names.size());
+    for (int i = 0; i < image_names.size(); ++i) {
+        imgs[i].Load(image_names[i]);
     }
 
     // H array corresponding to each img, img[0] is ID matrix.
@@ -144,7 +200,7 @@ int main(int argc, char *argv[]) {
                             good_matches, draw_image);
             CV_LOG_INFO(NULL,
                         left.path << "," << right.path << (i + 1) << " good matches size:" << good_matches.size());
-            cv::imshow("BFMatch", draw_image);
+            // cv::imshow("BFMatch", draw_image);
         }
         // find H
         std::vector<Point2f> src1_good_keypoints;
@@ -165,34 +221,75 @@ int main(int argc, char *argv[]) {
 
     // warp each img, and get overlap mask
     std::vector<Mat> warp_imgs;
+    std::vector<Mat> warp_masks;
     cv::Mat overlap;
     for (int i = 0; i < imgs.size(); ++i) {
         const InputImage &img = imgs[i];
+        const Mat mask = cv::Mat(img.image.size(), CV_8UC1, cv::Scalar(255));
+
         const Mat &H = H_array[i];
-        Mat warp_img = Warp(img, H, out_size);
-        imshow("warp " + img.path, warp_img);
+        Mat warp_img, warp_mask;
+        warpPerspective(img.image, warp_img, H, out_size);
+        warpPerspective(mask, warp_mask, H, out_size);
 
-        Mat mask = (warp_img != 0);
-        mask /= 255;
-        mask.convertTo(mask, CV_32FC3);
-        warp_img.convertTo(warp_img, CV_32FC3);
+        if (visual_dbg) {
+            imshow("warp " + img.path, warp_img);
+        }
         warp_imgs.push_back(warp_img);
-
-        if (i == 0) overlap = mask;
-        else overlap += mask;
+        warp_masks.push_back(warp_mask);
     }
     overlap.setTo(1, (overlap == 0));
-//    CV_LOG_INFO(NULL, overlap);
-    // add warp img
-    cv::Mat stitch;
     for (int i = 0; i < warp_imgs.size(); ++i) {
-        if (i == 0) stitch = warp_imgs[i];
-        else stitch += warp_imgs[i];
+        if (i < warp_imgs.size() - 1) {
+            // caculate two image overlap
+            cv::Mat overlay = (warp_masks[i] == warp_masks[i+1]);
+            overlay.setTo(0, warp_masks[i] == 0);
+            overlay.setTo(0, warp_masks[i+1] == 0);
+
+            // imshow("overlay for " + std::to_string(i), overlay);
+            // warp_mask[i] -= overlay;
+            // caculate overlap corners
+            int min_x = -1, max_x = -1;
+            uchar *p;
+            for (int y = 0; y < overlay.rows; ++y) {
+                p = overlay.ptr<uchar >(y);
+                for (int x = 0; x < overlay.cols; ++x) {
+                    if (255 == p[x]) {
+                        if (min_x == -1) {
+                            min_x = x;
+                            max_x = x;
+                        }
+                        if (x < min_x) {
+                            min_x = x;
+                        }
+                        if (x > max_x) {
+                            max_x = x;
+                        }
+                    }
+                }
+            }
+            // std::cout << "overlay:" << overlay << std::endl;
+            // std::cout << "min_x:" << min_x << " max_x:" << max_x << std::endl;
+            int middle_x = (min_x + max_x) / 2;
+            int w = warp_masks[i].cols;
+            int h = warp_masks[i].rows;
+            warp_masks[i](Rect(middle_x, 0, w-middle_x, h)).setTo(0);
+            warp_masks[i+1](Rect(0, 0, middle_x, h)).setTo(0);
+        }
+        if (visual_dbg) {
+            imshow("seam mask " + std::to_string(i), warp_masks[i]);
+        }
     }
-    stitch /= overlap;
-    stitch.convertTo(stitch, CV_8UC3);
+
+    cv::Mat stitch;
+    if (blend_method == "mbb") {
+        stitch = StitchWithMbbBlend(warp_imgs, warp_masks);
+    } else if (blend_method == "no") {
+        stitch = StitchWithNoBlend(warp_imgs, warp_masks);
+    }
     imshow("stitch", stitch);
-    imwrite("stitch.jpg", stitch);
+    const string img_name = "stitch_" + blend_method + ".jpg";
+    imwrite(img_name, stitch);
 
     cv::waitKey(0);
     return 0;

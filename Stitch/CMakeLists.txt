@@ -4,6 +4,10 @@ add_executable(Stitch stitch.cc)
 target_include_directories(Stitch PRIVATE ${OpenCV_INCLUDE_DIRS})
 target_link_libraries(Stitch PRIVATE ${OpenCV_LIBS})
 
+add_executable(OpenCVStitch opencv_stitcher.cc)
+target_include_directories(OpenCVStitch PRIVATE ${OpenCV_INCLUDE_DIRS})
+target_link_libraries(OpenCVStitch PRIVATE ${OpenCV_LIBS})
+
 configure_file(../Resource/uttower1.jpg . COPYONLY)
 configure_file(../Resource/uttower2.jpg . COPYONLY)
 configure_file(../Resource/Image1.jpg . COPYONLY)
