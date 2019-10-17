@@ -57,3 +57,8 @@ test OpenCV gaussian filter and bilateral filter.
 
 ![gaussian](doc/gaussian.png)
 ![bilateral](doc/bilateral.png)
+
+
+## Hist Match
+
+test Histgram match and remap.
