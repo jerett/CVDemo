@@ -22,7 +22,7 @@ struct CurveFittingCost {
 };
 
 int main(int argc, char *argv[]) {
-    std::cout << "test" << std::endl;
+    std::cout << "ceres test" << std::endl;
     double ar = 1.0, br = 2.0, cr = 1.0;
     double ae = 2.0, be = -1.0, ce = 5.0;
     int N = 100;
@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
 
     std::vector<double> x_data, y_data;
     for (int i = 0; i < N; ++i) {
-        double x = i / 100;
+        double x = i / 100.0;
         double y = exp(ar * x * x + br * x + cr) + rng.gaussian(w_sigma * w_sigma);
         x_data.push_back(x);
         y_data.push_back(y);
