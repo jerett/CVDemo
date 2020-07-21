@@ -17,7 +17,6 @@ add_subdirectory(filter)
 add_subdirectory(flow)
 add_subdirectory(mbb)
 add_subdirectory(hist)
-# add_subdirectory(slambook14)
 
 # some test code for wins only
 # add_subdirectory(HDRPlus)
