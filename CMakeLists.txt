@@ -6,7 +6,10 @@ add_subdirectory(Stitch)
 # uncomment if you have GLFW, DevIL, GLUT
 #add_subdirectory(SiftGPUStitch)
 
-add_subdirectory(Track)
+
+add_subdirectory(Util)
+
+# add_subdirectory(Track)
 add_subdirectory(Detection)
 add_subdirectory(OpenCVDraw)
 add_subdirectory(hog)
@@ -14,4 +17,7 @@ add_subdirectory(filter)
 add_subdirectory(flow)
 add_subdirectory(mbb)
 add_subdirectory(hist)
-add_subdirectory(slambook14)
+# add_subdirectory(slambook14)
+
+# some test code for wins only
+# add_subdirectory(HDRPlus)
