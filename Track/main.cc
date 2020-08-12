@@ -14,11 +14,10 @@
 #include <opencv2/videoio.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/core/utils/logger.hpp>
-#include <boost/filesystem.hpp>
 #include "tracker.h"
 #include "track_input.h"
 
-namespace bf = boost::filesystem;
+//namespace bf = boost::filesystem;
 using namespace cv;
 
 Rect2d ChooseRect(Mat &picture) {
@@ -34,6 +33,7 @@ Ptr<cd::Tracker> CreateTracker(const std::string &tracker_type) {
         {"MedianFlow", cd::Tracker::Algorithm::MedianFlow},
         {"GOTURN", cd::Tracker::Algorithm::GOTURN},
         {"MOSSE", cd::Tracker::Algorithm::MOSSE},
+        {"OpenCVMOSSE", cd::Tracker::Algorithm::OpenCVMOSSE},
         {"Staple", cd::Tracker::Algorithm::Staple},
     };
     Ptr<cd::Tracker> tracker;
@@ -61,17 +61,24 @@ int track(const std::string &src,
     double height = track_input->Get(cv::CAP_PROP_FRAME_HEIGHT);
     Size src_size(width, height);
     CV_LOG_INFO(NULL, "src video fps:" << src_fps << " width:" << width << " height:" << height);
-    bf::path in_path(src);
-    std::string basename = bf::basename(in_path);
-    CV_LOG_INFO(NULL, basename);
+
+    //tiny dir;
+    //if (tinydir_open(&dir, src.c_str()) != 0) {
+    //    std::cerr << "open " << src << " failed." << std::endl;
+    //    return -1;
+    //}
+    //bf::path in_path(src);
+    //std::string basename = bf::basename(in_path);
+    //CV_LOG_INFO(NULL, basename);
 
     auto tracker = CreateTracker(tracker_type);
     cv::VideoWriter video_writer;
     // test h264 encode first.
-    bf::path out_path = bf::path(out_dir) / (basename + "_" + tracker_type + ".mp4");
-    CV_LOG_INFO(NULL, "out path:" << out_path);
+    std::string outpath = "tmp.mp4";
+    //bf::path out_path = bf::path(out_dir) / (basename + "_" + tracker_type + ".mp4");
+    //CV_LOG_INFO(NULL, "out path:" << out_path);
 
-    if (!video_writer.open(out_path.string(), cv::VideoWriter::fourcc('H', '2', '6', '4'), src_fps, src_size)) {
+    if (!video_writer.open(outpath, cv::VideoWriter::fourcc('H', '2', '6', '4'), src_fps, src_size)) {
         CV_LOG_ERROR(NULL, "using H264 writer failed.");
         return -1;
     }
@@ -121,7 +128,7 @@ int track(const std::string &src,
     return 0;
 }
 
-int main(int argc, char *argv[]) {
+int TestCmdline(int argc, char* argv[]) {
     cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_DEBUG);
     const String keys =
         "{help h usage ? |      | print this message   }"
@@ -143,4 +150,81 @@ int main(int argc, char *argv[]) {
     }
 
     return track(src, out_dir, tracker_type);
+}
+
+//int TestMOSSE() {
+//    auto track_input = cd::TrackInput::Create("D:\\dataset\\OTB100\\sequences\\Fish\\img");
+//    //auto track_input = cd::TrackInput::Create("D:\\dataset\\OTB100\\sequences\\Box\\img");
+//    //auto track_input = cd::TrackInput::Create("D:\\dataset\\OTB100\\sequences\\Surfer\\img");
+//    if (!track_input->Open()) {
+//        CV_LOG_ERROR(NULL, "open dir failed.")
+//        return -1;
+//    }
+//    double src_fps = track_input->Get(cv::CAP_PROP_FPS);
+//    double width = track_input->Get(cv::CAP_PROP_FRAME_WIDTH);
+//    double height = track_input->Get(cv::CAP_PROP_FRAME_HEIGHT);
+//    Size src_size(width, height);
+//    CV_LOG_INFO(NULL, "src video fps:" << src_fps << " width:" << width << " height:" << height);
+//
+//    //const std::string algorithm = "OpenCVMOSSE";
+//    const std::string algorithm = "MOSSE";
+//    auto tracker = CreateTracker(algorithm);
+//    cv::VideoWriter video_writer;
+//    // test h264 encode first.
+//    std::string outpath = "tmp.mp4";
+//
+//    if (!video_writer.open(outpath, cv::VideoWriter::fourcc('H', '2', '6', '4'), src_fps, src_size)) {
+//        CV_LOG_ERROR(NULL, "using H264 writer failed.");
+//        return -1;
+//    }
+//
+//    cv::Mat first_frame;
+//    if (!track_input->Next(first_frame)) {
+//        CV_LOG_ERROR(NULL, "read first frame failed.");
+//        return -1;
+//    }
+//    auto rect = ChooseRect(first_frame);
+//    //cv::Rect2d rect(118, 52, 96, 100);
+//    CV_LOG_INFO(NULL, "choose rect " << rect);
+//
+//    bool r = tracker->Init(first_frame, rect);
+//    if (!r) {
+//        CV_LOG_ERROR(NULL, "init tracker failed.");
+//        return -1;
+//    }
+//
+//    cv::Mat frame;
+//    cv::Rect2d track_box;
+//    int frame_cnt = 0;
+//    while (track_input->Next(frame)) {
+//        ++frame_cnt;
+//        r = tracker->Update(frame, track_box);
+//        //if (!r) {
+//        //    CV_LOG_ERROR(NULL, "update tracker failed.");
+//        //    // reinit
+//        //    tracker = CreateTracker(algorithm);
+//        //    track_box = ChooseRect(frame);
+//        //    r = tracker->Init(frame, track_box);
+//        //    if (!r) {
+//        //        CV_LOG_ERROR(NULL, "reinit tracker failed.");
+//        //        return -1;
+//        //    }
+//        //}
+//        cv::rectangle(frame, track_box, cv::Scalar(255, 0, 0), 2);
+//        CV_LOG_INFO(NULL, "read " << frame.rows << " " << frame.cols << ", frame_cnt:" << frame_cnt);
+//        cv::imshow("track", frame);
+//        video_writer.write(frame);
+//        int k = cv::waitKey(1);
+//        // press 'esc' or 'q'
+//        if (k == 27 || k == 'q' || k == 'Q') {
+//            break;
+//        }
+//    }
+//    video_writer.release();
+//    return 0;
+//}
+
+int main(int argc, char *argv[]) {
+    //return TestMOSSE();
+    return TestCmdline(argc, argv);
 }

@@ -11,6 +11,7 @@
 
 #include <opencv2/tracking.hpp>
 #include "staple/staple_tracker.h"
+#include "MosseTracker.h"
 
 
 namespace cd {
@@ -26,6 +27,7 @@ public:
         MedianFlow,
         GOTURN,
         MOSSE,
+        OpenCVMOSSE,
         Staple,
     };
 
@@ -46,6 +48,25 @@ public:
 
 private:
     cv::Ptr<cv::Tracker> tracker_;
+};
+
+class TrackerMOSSE : public Tracker {
+public:
+    explicit TrackerMOSSE() {
+        ;
+    }
+    virtual ~TrackerMOSSE() = default;
+
+    bool Init(cv::Mat& frame, const cv::Rect2d& box) override {
+        return tracker_.Init(frame, box);
+    }
+
+    bool Update(cv::Mat& frame, cv::Rect2d& out_box) override {
+        return tracker_.Update(frame, out_box);
+    }
+
+private:
+    MOSSETracker tracker_;
 };
 
 class TrackerStaple : public Tracker {

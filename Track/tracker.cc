@@ -14,11 +14,14 @@ cv::Ptr<Tracker> Tracker::Create(cd::Tracker::Algorithm algorithm) {
         algorithm == Algorithm::MIL ||
         algorithm == Algorithm::TLD ||
         algorithm == Algorithm::MedianFlow ||
-        algorithm == Algorithm::GOTURN ||
-        algorithm == Algorithm::MOSSE) {
+        algorithm == Algorithm::GOTURN || 
+        algorithm == Algorithm::OpenCVMOSSE
+        ) {
         tracker = cv::Ptr<Tracker>(new TrackerOpenCV(algorithm));
     } else if (algorithm == Algorithm::Staple) {
         tracker = cv::Ptr<Tracker>(new TrackerStaple());
+    } else if (algorithm == Algorithm::MOSSE) {
+        tracker = cv::Ptr<Tracker>(new TrackerMOSSE());
     }
     assert(tracker != nullptr);
     return tracker;
@@ -43,7 +46,7 @@ TrackerOpenCV::TrackerOpenCV(Algorithm type) {
         tracker_ = cv::TrackerMedianFlow::create();
     } else if (type == Algorithm::GOTURN) {
         tracker_ = cv::TrackerGOTURN::create();
-    } else if (type == Algorithm::MOSSE) {
+    } else if (type == Algorithm::OpenCVMOSSE) {
         tracker_ = cv::TrackerMOSSE::create();
     } else {
         abort();

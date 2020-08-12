@@ -3,17 +3,23 @@
 //
 
 #include "track_input.h"
+#include "tinydir.h"
 #include <string>
-#include <boost/filesystem.hpp>
+//#include <boost/filesystem.hpp>
 
-namespace fs = boost::filesystem;
+//namespace fs = boost::filesystem;
 
 namespace cd {
 
 std::shared_ptr<TrackInput> TrackInput::Create(const std::string &url) {
-    fs::path p(url);
+    tinydir_file f;
+    if (tinydir_file_open(&f, url.c_str()) != 0) return nullptr;
+    //tinydir_file file;
+    //tinydir_readfile(&dir, &file);
+    //if (dir.has_next)
+    //fs::path p(url);
     std::shared_ptr<TrackInput> track_input;
-    if (fs::is_directory(p)) {
+    if (f.is_dir) {
         track_input = std::make_shared<TrackImgSeqDirInput>(url);
     } else {
         track_input = std::make_shared<TrackVideoInput>(url);
@@ -36,20 +42,29 @@ double TrackVideoInput::Get(int id) {
 
 
 bool TrackImgSeqDirInput::Open() {
-    fs::path p(dir_);
-    fs::directory_iterator end_itr;
+    tinydir_dir dir;
+    if (tinydir_open(&dir, dir_.data()) != 0) {
+        return false;
+    }
+    //fs::path p(dir_);
+    //fs::directory_iterator end_itr;
 
     std::vector<std::string> files;
     // cycle through the directory
-    for (fs::directory_iterator itr(p); itr != end_itr; ++itr) {
+    while (dir.has_next) {
         // If it's not a directory, list it. If you want to list directories too, just remove this check.
-        if (is_regular_file(itr->path()) && itr->path().extension() == ".jpg") {
+        tinydir_file file;
+        tinydir_readfile(&dir, &file);
+        //std::cout << "ext:" << file.extension << std::endl;
+        if (file.is_reg && strcmp(file.extension, "jpg") == 0) {
             // assign current file name to current_file and echo it out to the console.
-            std::string current_file = itr->path().string();
+            std::string current_file = file.path;
             files.push_back(current_file);
 //            std::cout << current_file << std::endl;
         }
+        tinydir_next(&dir);
     }
+    tinydir_close(&dir);
     std::sort(files.begin(), files.end());
     files_ = std::move(files);
     if (files_.empty()) {

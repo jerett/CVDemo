@@ -9,12 +9,12 @@ add_subdirectory(Stitch)
 
 add_subdirectory(Util)
 
-# add_subdirectory(Track)
+add_subdirectory(Track)
 add_subdirectory(Detection)
 add_subdirectory(OpenCVDraw)
 add_subdirectory(hog)
 add_subdirectory(filter)
-add_subdirectory(flow)
+add_subdirectory(StereoMatching)
 add_subdirectory(mbb)
 add_subdirectory(hist)
 
